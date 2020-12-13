@@ -9,8 +9,8 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
     // float y = lowerY + thisY * stepY;
     int i = threadIdx.x;
     int j = threadIdx.y;
-    float x = lowerX + thisX * stepX;
-    float y = lowerY + thisY * stepY;
+    float x = lowerX + i * stepX;
+    float y = lowerY + j * stepY;
 
     int idx;
     float z_re = x, z_im = y;
