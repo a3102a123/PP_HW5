@@ -31,7 +31,6 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
 
     int index = (j * width + i);
     output[index] = idx;
-    test[index] = index;
 }
 
 // Host front-end function that allocates the memory and launches the GPU kernel
