@@ -5,7 +5,7 @@
 #define XBLOCK_SIZE 16
 #define YBLOCK_SIZE 12
 
-__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,int width,int count, int *output) {
+__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,int width,int count, int *output, int *test) {
     // To avoid error caused by the floating number, use the following pseudo code
     //
     // float x = lowerX + thisX * stepX;
@@ -31,6 +31,7 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
 
     int index = (j * width + i);
     output[index] = idx;
+    test[index] = index;
 }
 
 // Host front-end function that allocates the memory and launches the GPU kernel
@@ -43,13 +44,23 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     int *host_mem, *dev_mem;
     host_mem = (int *)malloc(size * sizeof(int));
     cudaMalloc((void **)&dev_mem, size * sizeof(int));
+    // debug memory
+    int *host_test,*dev_test;
+    cudaMalloc((void **)&dev_test, size * sizeof(int));
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
-    mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem);
+    mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem,dev_test);
     cudaDeviceSynchronize();
     // GPU translate result data back
     cudaMemcpy(host_mem, dev_mem, size * sizeof(int), cudaMemcpyDeviceToHost);
+    // debug message
+    cudaMemcpy(host_test, dev_test, size * sizeof(int), cudaMemcpyDeviceToHost);
+    for(int j = 0 ; j < resY ; j++){
+        for(int i = 0 ; i < resX ; i++)
+            printf("%d ",host_mem[j * resX + i]);
+        printf("\n");
+    }
     memcpy(img, host_mem, size);
     free(host_mem);
     cudaFree(dev_mem);
