@@ -62,7 +62,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
             printf("%d ",host_test[j * resX + i]);
         printf("\n");
     }
-    memcpy(img, host_mem, size);
+    memcpy(img, host_mem, size*sizeof(int));
     free(host_mem);
     cudaFree(dev_mem);
 }
