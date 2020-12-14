@@ -49,6 +49,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem);
     cudaDeviceSynchronize();
     // GPU translate result data back
+    cudaMemcpy(host_mem, dev_mem, size * sizeof(int), cudaMemcpyDeviceToHost);
     memcpy(img, host_mem, size*sizeof(int));
     free(host_mem);
     cudaFree(dev_mem);
