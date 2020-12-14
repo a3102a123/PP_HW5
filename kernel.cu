@@ -46,6 +46,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     cudaMalloc((void **)&dev_mem, size * sizeof(int));
     // debug memory
     int *host_test,*dev_test;
+    host_test = (int *)malloc(size * sizeof(int));
     cudaMalloc((void **)&dev_test, size * sizeof(int));
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
@@ -58,7 +59,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     cudaMemcpy(host_test, dev_test, size * sizeof(int), cudaMemcpyDeviceToHost);
     for(int j = 0 ; j < resY ; j++){
         for(int i = 0 ; i < resX ; i++)
-            printf("%d ",host_mem[j * resX + i]);
+            printf("%d ",host_test[j * resX + i]);
         printf("\n");
     }
     memcpy(img, host_mem, size);
