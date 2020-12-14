@@ -180,15 +180,22 @@ int main(int argc, char **argv)
     // Run the reference threaded version
     //
 
-    double minRef = 1e30;
-    for (int i = 0; i < 5; ++i)
+    double minRef = 0;
+    double recordRef[10] = {0};
+    for (int i = 0; i < 10; ++i)
     {
         memset(output_thread, 0, width * height * sizeof(int));
         double startTime = CycleTimer::currentSeconds();
         mandelbrotThreadRef(x0, y0, x1, y1, width, height, maxIterations, output_test);
         double endTime = CycleTimer::currentSeconds();
-        minRef = std::min(minRef, endTime - startTime);
+        recordRef[i] = endTime - startTime;
     }
+    std::sort(recordRef, recordRef + 10);
+    for (int i = 3; i < 7; ++i)
+    {
+        minRef += recordRef[i];
+    }
+    minRef /= 4;
 
     printf("[mandelbrot reference]:\t\t[%.3f] ms\n", minRef * 1000);
     writePPMImage(output_test, width, height, "mandelbrot-ref.ppm", maxIterations);
@@ -197,15 +204,22 @@ int main(int argc, char **argv)
     // Run the threaded version
     //
 
-    double minThread = 1e30;
-    for (int i = 0; i < 5; ++i)
+    double minThread = 0;
+    double recordThread[10] = {0};
+    for (int i = 0; i < 10; ++i)
     {
         memset(output_thread, 0, width * height * sizeof(int));
         double startTime = CycleTimer::currentSeconds();
         mandelbrotThread(x0, y0, x1, y1, width, height, maxIterations, output_thread);
         double endTime = CycleTimer::currentSeconds();
-        minThread = std::min(minThread, endTime - startTime);
+        recordThread[i] = endTime - startTime;
     }
+    std::sort(recordThread, recordThread + 10);
+    for (int i = 3; i < 7; ++i)
+    {
+        minThread += recordThread[i];
+    }
+    minThread /= 4;
 
     printf("[mandelbrot thread]:\t\t[%.3f] ms\n", minThread * 1000);
     writePPMImage(output_thread, width, height, "mandelbrot-thread.ppm", maxIterations);
@@ -221,7 +235,8 @@ int main(int argc, char **argv)
     }
 
     // compute speedup
-    printf("\t\t\t\t(%.2fx speedup over the CPU serial version)\n", minSerial / minThread);
+    if (!isGPUOnly)
+        printf("\t\t\t\t(%.2fx speedup over the CPU serial version)\n", minSerial / minThread);
     printf("\t\t\t\t(%.2fx speedup over the reference)\n", minRef / minThread);
 
     delete[] output_test;
