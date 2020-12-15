@@ -29,7 +29,7 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
         z_im = c_im + new_im;
     }
 
-    int* row = (int*)((char*)output + j * pitch);
+    int* row = (int*)((char*)output + j * width);
     row[i] = idx;
 }
 
