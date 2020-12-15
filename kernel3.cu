@@ -4,35 +4,37 @@
 
 #define XBLOCK_SIZE 32
 #define YBLOCK_SIZE 24
-#define GROUP_SIZE 2
+#define GROUP_SIZE 4
 
-__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,size_t width,int count, int *output, int group_size) {
+__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,size_t width,int count, int *output) {
     // To avoid error caused by the floating number, use the following pseudo code
     //
     // float x = lowerX + thisX * stepX;
     // float y = lowerY + thisY * stepY;
-    for(int k = 0 ; k < group_size ; k++){
-        int i = blockIdx.x * blockDim.x * group_size + threadIdx.x * group_size + k;
-        int j = blockIdx.y * blockDim.y + threadIdx.y;
-        float c_re = lowerX + i * stepX;
-        float c_im = lowerY + j * stepY;
+    for(int l = 0 ; l < GROUP_SIZE ; l++){
+        for(int k = 0 ; k < GROUP_SIZE ; k++){
+            int i = blockIdx.x * blockDim.x * GROUP_SIZE + threadIdx.x * GROUP_SIZE + k;
+            int j = blockIdx.y * blockDim.y + threadIdx.y * GROUP_SIZE + l;
+            float c_re = lowerX + i * stepX;
+            float c_im = lowerY + j * stepY;
 
-        int idx;
-        float z_re = c_re, z_im = c_im;
-        for (idx = 0; idx < count; ++idx)
-        {
+            int idx;
+            float z_re = c_re, z_im = c_im;
+            for (idx = 0; idx < count; ++idx)
+            {
 
-            if (z_re * z_re + z_im * z_im > 4.f)
-            break;
+                if (z_re * z_re + z_im * z_im > 4.f)
+                break;
 
-            float new_re = z_re * z_re - z_im * z_im;
-            float new_im = 2.f * z_re * z_im;
-            z_re = c_re + new_re;
-            z_im = c_im + new_im;
+                float new_re = z_re * z_re - z_im * z_im;
+                float new_im = 2.f * z_re * z_im;
+                z_re = c_re + new_re;
+                z_im = c_im + new_im;
+            }
+
+            int* row = (int*)((char*)output + j * width);
+            row[i] = idx;
         }
-
-        int* row = (int*)((char*)output + j * width);
-        row[i] = idx;
     }
 }
 
@@ -49,8 +51,8 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     cudaMallocPitch(&dev_mem, &pitch, resX * sizeof(int), resY);
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
-    dim3 block_size(XBLOCK_SIZE / GROUP_SIZE, YBLOCK_SIZE);
-    mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, pitch, maxIterations, dev_mem, GROUP_SIZE);
+    dim3 block_size(XBLOCK_SIZE / GROUP_SIZE, YBLOCK_SIZE / GROUP_SIZE);
+    mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, pitch, maxIterations, dev_mem);
     cudaDeviceSynchronize();
     // GPU translate result data back
     cudaMemcpy2D(host_mem, size/resY, dev_mem, pitch, resX * sizeof(int), resY, cudaMemcpyDeviceToHost);
