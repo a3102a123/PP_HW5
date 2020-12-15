@@ -42,7 +42,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     // allocate memory in host & device
     int *host_mem, *dev_mem;
     size_t pitch;
-    cudaMallocHost(&host_mem, size);
+    cudaHostAlloc(&host_mem, size, cudaHostAllocDefault);
     cudaMallocPitch(&dev_mem, &pitch, resX * sizeof(int), resY);
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
