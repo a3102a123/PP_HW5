@@ -29,8 +29,8 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
         z_im = c_im + new_im;
     }
 
-    int index = (j * width + i);
-    output[index] = idx;
+    int* row = (int*)((char*)output + j * pitch);
+    row[i] = idx;
 }
 
 // Host front-end function that allocates the memory and launches the GPU kernel
