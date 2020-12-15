@@ -14,7 +14,7 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
     for(int l = 0 ; l < GROUP_SIZE ; l++){
         for(int k = 0 ; k < GROUP_SIZE ; k++){
             int i = blockIdx.x * blockDim.x * GROUP_SIZE + threadIdx.x * GROUP_SIZE + k;
-            int j = blockIdx.y * blockDim.y + threadIdx.y * GROUP_SIZE + l;
+            int j = blockIdx.y * blockDim.y * GROUP_SIZE + threadIdx.y * GROUP_SIZE + l;
             float c_re = lowerX + i * stepX;
             float c_im = lowerY + j * stepY;
 
