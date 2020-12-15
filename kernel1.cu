@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define XBLOCK_SIZE 16
-#define YBLOCK_SIZE 12
+#define XBLOCK_SIZE 32
+#define YBLOCK_SIZE 24
 
 __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,int width,int count, int *output) {
     // To avoid error caused by the floating number, use the following pseudo code
