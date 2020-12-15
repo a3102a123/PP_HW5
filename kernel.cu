@@ -48,8 +48,8 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     cudaMallocHost(&host_mem, size);
     cudaMallocPitch(&dev_mem, &pitch, resX * sizeof(int), resY);
     // GPU processing 
-    dim3 num_block(resX / XBLOCK_SIZE / GROUP_SIZE, resY / YBLOCK_SIZE);
-    dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
+    dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
+    dim3 block_size(XBLOCK_SIZE / GROUP_SIZE, YBLOCK_SIZE);
     mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, pitch, maxIterations, dev_mem, GROUP_SIZE);
     cudaDeviceSynchronize();
     // GPU translate result data back
