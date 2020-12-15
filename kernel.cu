@@ -5,7 +5,7 @@
 #define XBLOCK_SIZE 16
 #define YBLOCK_SIZE 12
 
-__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,int width,int count, int *output) {
+__global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,size_t width,int count, int *output) {
     // To avoid error caused by the floating number, use the following pseudo code
     //
     // float x = lowerX + thisX * stepX;
@@ -41,16 +41,17 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     float stepY = (upperY - lowerY) / resY;
     // allocate memory in host & device
     int *host_mem, *dev_mem;
-    cudaMallocHost(&hostPtr, size);
-    cudaMalloc((void **)&dev_mem, size);
+    size_t pitch;
+    cudaMallocHost(&host_mem, size);
+    cudaMallocPitch(&dev_mem, &pitch, resX * sizeof(int), resY);
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
-    mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem);
+    mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, pitch, maxIterations, dev_mem);
     cudaDeviceSynchronize();
     // GPU translate result data back
     cudaMemcpy(host_mem, dev_mem, size, cudaMemcpyDeviceToHost);
     memcpy(img, host_mem, size);
-    free(host_mem);
+    cudaFreeHost(host_mem);
     cudaFree(dev_mem);
 }
