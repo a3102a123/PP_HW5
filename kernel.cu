@@ -36,21 +36,21 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
 // Host front-end function that allocates the memory and launches the GPU kernel
 void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, int resX, int resY, int maxIterations)
 {
-    int size = resX * resY;
+    int size = resX * resY * sizeof(int);
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
     // allocate memory in host & device
     int *host_mem, *dev_mem;
-    host_mem = (int *)malloc(size * sizeof(int));
-    cudaMalloc((void **)&dev_mem, size * sizeof(int));
+    cudaMallocHost(&hostPtr, size);
+    cudaMalloc((void **)&dev_mem, size);
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
     mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem);
     cudaDeviceSynchronize();
     // GPU translate result data back
-    cudaMemcpy(host_mem, dev_mem, size * sizeof(int), cudaMemcpyDeviceToHost);
-    memcpy(img, host_mem, size*sizeof(int));
+    cudaMemcpy(host_mem, dev_mem, size, cudaMemcpyDeviceToHost);
+    memcpy(img, host_mem, size);
     free(host_mem);
     cudaFree(dev_mem);
 }
