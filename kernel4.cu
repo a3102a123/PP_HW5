@@ -36,12 +36,14 @@ __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float step
 // Host front-end function that allocates the memory and launches the GPU kernel
 void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, int resX, int resY, int maxIterations)
 {
-    int size = resX * resY * sizeof(int);
+    int size = resX * resY * sizeof(int),j;
     int round_size = resX * YBLOCK_SIZE * sizeof(int);
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
     // allocate memory in host & device
     int *host_mem, *host_temp_mem, *dev_ptr, *dev_pre_ptr, *dev_mem1, *dev_mem2,*temp_ptr;
+    cudaStream_t stream1; 
+    cudaStreamCreate ( &stream1) ;
     host_mem = (int *)malloc(size);
     cudaHostAlloc(&host_temp_mem, size, cudaHostAllocDefault);
     cudaMalloc((void **)&dev_mem1, round_size);
@@ -51,15 +53,20 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, 1);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
-    for(int j = 0 ; j < resY / YBLOCK_SIZE ; j++){
+    for(j = 0 ; j < resY / YBLOCK_SIZE ; j++){
         mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_ptr, j, YBLOCK_SIZE);
+        if(j != 0){
+            cudaStreamSynchronize( stream1 );
+            memcpy(host_mem + (round_size / sizeof(int)) * (j - 1), host_temp_mem, round_size);
+        }
         cudaDeviceSynchronize();
         temp_ptr = dev_ptr;
         dev_ptr = dev_pre_ptr;
         dev_pre_ptr = temp_ptr;
-        temp_ptr = host_mem + (round_size / sizeof(int)) * j;
-        cudaMemcpy( temp_ptr, dev_pre_ptr, round_size, cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync( host_temp_mem, dev_pre_ptr, round_size, cudaMemcpyDeviceToHost,stream1);
     }
+    cudaStreamSynchronize( stream1 );
+    memcpy(host_mem + (round_size / sizeof(int)) * (j - 1), host_temp_mem, round_size);
     /*for(int j = 25 ; j < 28 ; j++){
         for(int i = 0 ; i < resX ; i++)
             printf("%d ",host_mem[i + j * resX]);
