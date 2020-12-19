@@ -54,12 +54,13 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     dim3 num_block(resX / XBLOCK_SIZE, resY / YBLOCK_SIZE);
     dim3 block_size(1, YBLOCK_SIZE);
     for(int i = 0 ; i < XBLOCK_SIZE ; i++){
-        mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev1_mem, i, round_size);
+        mandelKernel<<<num_block, block_size>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem1, i, round_size);
         cudaDeviceSynchronize();
-        cudaMemcpy(host_mem + i * round_size, dev1_mem, round_size, cudaMemcpyDeviceToHost);
+        cudaMemcpy(host_mem + i * round_size, dev_mem1, round_size, cudaMemcpyDeviceToHost);
     }
     // GPU translate result data back
     memcpy(img, host_mem, size);
-    free(host_mem);
-    cudaFree(dev_mem);
+    cudaFreeHost(host_mem);
+    cudaFree(dev_mem1);
+    cudaFree(dev_mem2);
 }
