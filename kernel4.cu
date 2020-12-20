@@ -62,8 +62,8 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
         cudaStreamSynchronize( stream[j] );
         cudaMemcpyAsync( host_ptr, dev_mem + (round_size / sizeof(int)) * j, round_size, cudaMemcpyDeviceToHost,lock);
         if(j !=0 ){
-            cudaStreamSynchronize( lock );
             memcpy(img + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
+            cudaStreamSynchronize( lock );
         }
         temp_ptr = host_ptr;
         host_ptr = host_pre_ptr;
