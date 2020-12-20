@@ -41,13 +41,12 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
     // allocate memory in host & device
-    int *host_mem, *host_mem1, *host_mem2, *host_ptr, *host_pre_ptr, *dev_mem,*temp_ptr;
+    int *host_mem1, *host_mem2, *host_ptr, *host_pre_ptr, *dev_mem,*temp_ptr;
     int n = resY / YBLOCK_SIZE;
     cudaStream_t stream[n],lock; 
     cudaStreamCreate ( &lock );
     for(j = 0 ; j < n ; j++ )
         cudaStreamCreate ( &stream[j] );
-    host_mem = (int *)malloc(size);
     cudaHostAlloc(&host_mem1, round_size, cudaHostAllocDefault);
     cudaHostAlloc(&host_mem2, round_size, cudaHostAllocDefault);
     cudaMalloc((void **)&dev_mem, size);
@@ -64,22 +63,21 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
         cudaMemcpyAsync( host_ptr, dev_mem + (round_size / sizeof(int)) * j, round_size, cudaMemcpyDeviceToHost,lock);
         if(j !=0 ){
             cudaStreamSynchronize( lock );
-            memcpy(host_mem + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
+            memcpy(img + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
         }
         temp_ptr = host_ptr;
         host_ptr = host_pre_ptr;
         host_pre_ptr = temp;
     }
     cudaStreamSynchronize( lock );
-    memcpy(host_mem + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
+    memcpy(img + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
     /*for(int j = 25 ; j < 28 ; j++){
         for(int i = 0 ; i < resX ; i++)
             printf("%d ",host_mem[i + j * resX]);
         printf("\n");
     }*/
     // GPU translate result data back
-    memcpy(img, host_mem, size);
-    cudaFreeHost(host_mem);
-    cudaFree(dev_mem1);
-    cudaFree(dev_mem2);
+    cudaFreeHost(host_mem1);
+    cudaFreeHost(host_mem2);
+    cudaFree(dev_mem);
 }
