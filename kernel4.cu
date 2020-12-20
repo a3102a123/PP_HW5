@@ -58,7 +58,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     dim3 num_block(resX / XBLOCK_SIZE, 1);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
     for(j = 0 ; j < n ; j++){
-        mandelKernel<<<num_block, block_size, stream[j]>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem, j, YBLOCK_SIZE);
+        mandelKernel<<<num_block, block_size,0 , stream[j]>>>(lowerX, lowerY, stepX, stepY, resX, maxIterations, dev_mem, j, YBLOCK_SIZE);
     }
     for(j = 0 ; j < n ; j++ ){
         cudaStreamSynchronize( stream[j] );
