@@ -67,7 +67,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
         }
         temp_ptr = host_ptr;
         host_ptr = host_pre_ptr;
-        host_pre_ptr = temp;
+        host_pre_ptr = temp_ptr;
     }
     cudaStreamSynchronize( lock );
     memcpy(img + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
