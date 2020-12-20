@@ -41,19 +41,18 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     float stepX = (upperX - lowerX) / resX;
     float stepY = (upperY - lowerY) / resY;
     // allocate memory in host & device
-    int *host_mem, *host_temp_mem, *dev_ptr, *dev_pre_ptr, *dev_mem, *dev_mem1, *dev_mem2,*temp_ptr;
+    int *host_mem, *host_mem1, *host_mem2, *host_ptr, *host_pre_ptr, *dev_mem,*temp_ptr;
     int n = resY / YBLOCK_SIZE;
     cudaStream_t stream[n],lock; 
     cudaStreamCreate ( &lock );
     for(j = 0 ; j < n ; j++ )
         cudaStreamCreate ( &stream[j] );
     host_mem = (int *)malloc(size);
-    cudaHostAlloc(&host_temp_mem, size, cudaHostAllocDefault);
+    cudaHostAlloc(&host_mem1, round_size, cudaHostAllocDefault);
+    cudaHostAlloc(&host_mem2, round_size, cudaHostAllocDefault);
     cudaMalloc((void **)&dev_mem, size);
-    cudaMalloc((void **)&dev_mem1, round_size);
-    cudaMalloc((void **)&dev_mem2, round_size);
-    dev_ptr = dev_mem1;
-    dev_pre_ptr = dev_mem2;
+    host_ptr = host_mem1;
+    host_pre_ptr = host_mem2;
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, 1);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
@@ -62,10 +61,17 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     }
     for(j = 0 ; j < n ; j++ ){
         cudaStreamSynchronize( stream[j] );
-        cudaMemcpyAsync( host_temp_mem, dev_mem + (round_size / sizeof(int)) * j, round_size, cudaMemcpyDeviceToHost,lock);
-        cudaStreamSynchronize( lock );
-        memcpy(host_mem + (round_size / sizeof(int)) * j, host_temp_mem, round_size);
+        cudaMemcpyAsync( host_ptr, dev_mem + (round_size / sizeof(int)) * j, round_size, cudaMemcpyDeviceToHost,lock);
+        if(j !=0 ){
+            cudaStreamSynchronize( lock );
+            memcpy(host_mem + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
+        }
+        temp_ptr = host_ptr;
+        host_ptr = host_pre_ptr;
+        host_pre_ptr = temp;
     }
+    cudaStreamSynchronize( lock );
+    memcpy(host_mem + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
     /*for(int j = 25 ; j < 28 ; j++){
         for(int i = 0 ; i < resX ; i++)
             printf("%d ",host_mem[i + j * resX]);
