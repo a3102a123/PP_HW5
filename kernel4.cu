@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define XBLOCK_SIZE 32
-#define YBLOCK_SIZE 24
+#define XBLOCK_SIZE 16
+#define YBLOCK_SIZE 48
 
 __global__ void mandelKernel(float lowerX, float lowerY, float stepX, float stepY,int width,int count, int *output, int round, int round_size) {
     // To avoid error caused by the floating number, use the following pseudo code
@@ -51,7 +51,7 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     cudaHostAlloc(&host_mem2, round_size, cudaHostAllocDefault);
     cudaMalloc((void **)&dev_mem, size);
     host_ptr = host_mem1;
-    host_pre_ptr = host_mem2;
+    host_pre_ptr = host_mem1;
     // GPU processing 
     dim3 num_block(resX / XBLOCK_SIZE, 1);
     dim3 block_size(XBLOCK_SIZE, YBLOCK_SIZE);
@@ -61,9 +61,9 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     for(j = 0 ; j < n ; j++ ){
         cudaStreamSynchronize( stream[j] );
         cudaMemcpyAsync( host_ptr, dev_mem + (round_size / sizeof(int)) * j, round_size, cudaMemcpyDeviceToHost,lock);
-        if(j !=0 ){
-            memcpy(img + (round_size / sizeof(int)) * (j - 1), host_pre_ptr, round_size);
+        if(j >= 0 ){
             cudaStreamSynchronize( lock );
+            memcpy(img + (round_size / sizeof(int)) * (j), host_pre_ptr, round_size);
         }
         temp_ptr = host_ptr;
         host_ptr = host_pre_ptr;
