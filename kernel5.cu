@@ -51,6 +51,6 @@ void hostFE (float upperX, float upperY, float lowerX, float lowerY, int* img, i
     // GPU translate result data back
     cudaMemcpy(host_mem, dev_mem, size, cudaMemcpyDeviceToHost);
     memcpy(img, host_mem, size);
-    free(host_mem);
+    cudaFreeHost(host_mem);
     cudaFree(dev_mem);
 }
